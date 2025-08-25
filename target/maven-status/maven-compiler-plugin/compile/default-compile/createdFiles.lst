@@ -1,0 +1,3 @@
+com\aas\converter\controller\ViewController.class
+com\aas\converter\service\AasxConverterService.class
+com\aas\converter\AasxConverterApiApplication.class

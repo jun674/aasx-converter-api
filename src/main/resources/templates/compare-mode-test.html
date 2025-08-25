@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Mode Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        /* 상단 업로드 영역 */
+        .upload-area {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .upload-box {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        
+        .upload-box:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+        
+        .upload-box h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .upload-box .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        /* 하단 결과 영역 */
+        .results-area {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none; /* 초기에는 숨김 */
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .result-box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .result-box h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .json-content {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .file-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AASX 파일 비교 모드</h1>
+        
+        <!-- 상단: 파일 업로드 영역 -->
+        <div class="upload-area">
+            <h2 style="text-align: center; margin-bottom: 20px;">파일 업로드</h2>
+            <div class="upload-grid">
+                <div class="upload-box" onclick="document.getElementById('file1').click()">
+                    <div class="icon">📁</div>
+                    <h3>파일 1</h3>
+                    <p>AASX 파일을 선택하세요</p>
+                    <input type="file" id="file1" accept=".aasx" style="display: none" onchange="handleFile(1, this)">
+                </div>
+                
+                <div class="upload-box" onclick="document.getElementById('file2').click()">
+                    <div class="icon">📁</div>
+                    <h3>파일 2</h3>
+                    <p>AASX 파일을 선택하세요</p>
+                    <input type="file" id="file2" accept=".aasx" style="display: none" onchange="handleFile(2, this)">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 하단: 결과 표시 영역 -->
+        <div class="results-area" id="resultsArea">
+            <h2 style="text-align: center; margin-bottom: 20px;">비교 결과</h2>
+            <div class="results-grid">
+                <div class="result-box">
+                    <div class="file-info">
+                        <span id="fileName1">파일 1</span>
+                        <button class="btn btn-secondary" onclick="resetFile(1)">변경</button>
+                    </div>
+                    <div class="json-content" id="jsonContent1">
+                        JSON 데이터가 여기에 표시됩니다.
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <div class="file-info">
+                        <span id="fileName2">파일 2</span>
+                        <button class="btn btn-secondary" onclick="resetFile(2)">변경</button>
+                    </div>
+                    <div class="json-content" id="jsonContent2">
+                        JSON 데이터가 여기에 표시됩니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let fileData = {
+            file1: null,
+            file2: null
+        };
+        
+        function handleFile(fileNum, input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.aasx')) {
+                alert('AASX 파일만 업로드할 수 있습니다.');
+                return;
+            }
+            
+            // 파일 업로드 처리 (실제로는 서버로 전송)
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // 여기서는 임시로 파일명만 표시
+            document.getElementById('fileName' + fileNum).textContent = file.name;
+            fileData['file' + fileNum] = file;
+            
+            // 임시 JSON 데이터 표시
+            const sampleData = {
+                fileName: file.name,
+                uploadTime: new Date().toISOString(),
+                message: "실제 구현에서는 서버에서 변환된 JSON이 표시됩니다."
+            };
+            
+            document.getElementById('jsonContent' + fileNum).textContent = JSON.stringify(sampleData, null, 2);
+            
+            // 결과 영역 표시
+            document.getElementById('resultsArea').style.display = 'block';
+            
+            // 실제 구현에서는 여기서 서버로 파일을 전송하고 JSON을 받아옴
+            /*
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('jsonContent' + fileNum).textContent = JSON.stringify(data, null, 2);
+                document.getElementById('resultsArea').style.display = 'block';
+            });
+            */
+        }
+        
+        function resetFile(fileNum) {
+            // 파일 초기화
+            fileData['file' + fileNum] = null;
+            document.getElementById('file' + fileNum).value = '';
+            
+            // 두 파일 모두 없으면 결과 영역 숨김
+            if (!fileData.file1 && !fileData.file2) {
+                document.getElementById('resultsArea').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
